@@ -31,8 +31,10 @@
   },
   "type": "module",
   "dependencies": {
+    "@types/d3": "^7.4.3",
     "bits-ui": "^0.19.6",
     "clsx": "^2.1.0",
+    "d3": "^7.9.0",
     "lucide-svelte": "^0.356.0",
     "tailwind-merge": "^2.2.1",
     "tailwind-variants": "^0.2.0"
