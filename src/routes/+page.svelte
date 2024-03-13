@@ -1,6 +1,6 @@
 <script lang="ts">
   import Nav from "$lib/Nav.svelte";
-  import Prompt from "$lib/components/ui/Prompt.svelte";
+  import Prompt from "$lib/Prompt.svelte";
 </script>
 
 <div class="flex flex-col h-full">
