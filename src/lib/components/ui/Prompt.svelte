@@ -18,6 +18,10 @@
   });
 </script>
 
-<Button variant="outline" class="w-full" on:click={generateUniquePrompt}>
+<Button
+  variant="outline"
+  class="w-full rounded-none"
+  on:click={generateUniquePrompt}
+>
   {randomPrompt}
 </Button>
