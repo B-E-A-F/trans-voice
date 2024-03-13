@@ -9,6 +9,7 @@
   let width = 960
   let height = 400
   let data: DataItem[] = []
+  let lastDotTime = 0 // Keep track of the last time a dot was added
 
   // Must be called on analyser.getFloatTimeDomainData and audioContext.sampleRate
   // From https://github.com/cwilso/PitchDetect/pull/23
@@ -31,7 +32,7 @@
     // Find a range in the buffer where the values are below a given threshold.
     let r1 = 0
     let r2 = SIZE - 1
-    let threshold = 0.2
+    let threshold = 0 // sensitivity threshold (lower is more sensitive)
 
     // Walk up for r1
     for (let i = 0; i < SIZE / 2; i++) {
@@ -98,6 +99,8 @@
     return sampleRate / T0
   }
 
+  let lastDataUpdateTime = 0 // keep track of the last update time
+
   async function startAudio() {
     if (!navigator.mediaDevices.getUserMedia) {
       console.log("getUserMedia not supported on your browser!")
@@ -113,18 +116,23 @@
       const bufferLength = analyser.fftSize
       const dataArray = new Float32Array(bufferLength)
 
-      const maxPitchThreshold = 200 // Define the maximum valid pitch threshold
+      const maxPitchThreshold = 600 // Ignore Hz values above this threshold
+      const minPitchThreshold = 20 // Ignore Hz values below this threshold
 
       const getAudioData = () => {
         analyser.getFloatTimeDomainData(dataArray)
         if (audio) {
           let pitch = autoCorrelate(dataArray, audio.sampleRate)
-          if (pitch > maxPitchThreshold) {
-            pitch = -1 // Consider not showing this like the iOS app does
+          if (pitch > maxPitchThreshold || pitch < minPitchThreshold) {
+            pitch = -1
           }
           const now = Date.now()
-          data = [...data, { time: now, pitch }]
-          if (data.length > 10000) data.shift() // show only the last 10 seconds
+          // Check if at least 300ms have passed since the last update
+          if (now - lastDataUpdateTime > 300) {
+            data = [...data, { time: now, pitch }]
+            if (data.length > 1000) data.shift() // Show only the last 10 seconds
+            lastDataUpdateTime = now
+          }
         }
         window.requestAnimationFrame(getAudioData)
       }
@@ -148,27 +156,55 @@
       .domain([Date.now() - 1000, Date.now()])
       .range([0, width])
 
-    const yScale = d3
-      .scaleLinear()
-      .domain([0, 800]) // hardcode pitch range for visualization
-      .range([height, 0])
+    const yScale = d3.scaleLinear().domain([50, 500]).range([height, 0])
 
-    const line = d3
-      .line<DataItem>()
-      .defined((d) => d.pitch > -1) // Only include points with pitch > -1
-      .x((d) => xScale(d.time))
-      .y((d) => yScale(d.pitch))
-      .curve(d3.curveLinear)
+    const drawDots = (data: DataItem[]) => {
+      svg
+        .selectAll("circle")
+        .data(data)
+        .join("circle")
+        .attr("cx", (d) => xScale(d.time))
+        .attr("cy", (d) => yScale(d.pitch))
+        .attr("r", 3) // Size of the dots
+        .attr("fill", "steelblue")
+    }
 
-    const updateGraph = () => {
-      xScale.domain([Date.now() - 10000, Date.now()])
+    // connect dots if they are close enough in time (3 seconds)
+    const connectDots = (data: any[]) => {
+      // Filter out isolated dots at the start and end
+      const filteredData = data.filter(
+        // Keep if not first or last point, or if adjacent points are within the time range
+        (d, i, arr) =>
+          (i > 0 && arr[i].time - arr[i - 1].time <= 3000) ||
+          (i < arr.length - 1 && arr[i + 1].time - arr[i].time <= 3000)
+      )
+
+      const linesData = filteredData.filter(
+        (_, i, arr) => i > 0 && arr[i].time - arr[i - 1].time <= 3000
+      )
+
+      const line = d3
+        .line<DataItem>()
+        .defined((d) => d.pitch > -1) // don't show lines for points with no valid pitch
+        .x((d) => xScale(d.time))
+        .y((d) => yScale(d.pitch))
+        .curve(d3.curveLinear)
+
       svg
         .selectAll("path")
-        .data([data])
+        .data([linesData])
         .join("path")
         .attr("d", line)
         .attr("fill", "none")
         .attr("stroke", "steelblue")
+    }
+
+    const updateGraph = () => {
+      xScale.domain([Date.now() - 10000, Date.now()])
+      const newData = data.filter((d) => d.time >= Date.now() - 10000)
+
+      drawDots(newData)
+      connectDots(newData)
 
       window.requestAnimationFrame(updateGraph)
     }
