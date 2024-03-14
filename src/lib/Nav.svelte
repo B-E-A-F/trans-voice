@@ -1,17 +1,10 @@
 <script>
   import { Heart, ListMusic, Waves } from "lucide-svelte";
-  import TransFlag from "./TransFlag.svelte";
   import * as Tooltip from "$lib/components/ui/tooltip";
+  import TransFlag from "./TransFlag.svelte";
   import Button from "./components/ui/button/button.svelte";
-
-  import { onMount } from "svelte";
   import { cn } from "./utils";
-
-  let currentPath = "";
-
-  onMount(() => {
-    currentPath = window.location.pathname;
-  });
+  import { page } from "$app/stores";
 </script>
 
 <header
@@ -23,7 +16,7 @@
     <a
       class={cn(
         "flex transition-colors hover:text-foreground/80 text-foreground/60 flex-row gap-2",
-        currentPath === "/" && "text-foreground/80"
+        $page.url.pathname === "/" && "text-foreground/80"
       )}
       href="/"
     >
@@ -32,7 +25,7 @@
     <a
       class={cn(
         "flex transition-colors hover:text-foreground/80 text-foreground/60 flex-row gap-2",
-        currentPath === "/tone" && "text-foreground/80"
+        $page.url.pathname === "/tone" && "text-foreground/80"
       )}
       href="/tone"
     >
