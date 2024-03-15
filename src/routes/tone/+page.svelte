@@ -3,6 +3,7 @@
   import Button from "$lib/components/ui/button/button.svelte";
   import { Pause, Play, Volume2, VolumeX } from "lucide-svelte";
   import { onMount } from "svelte";
+  import MicFrequency from "./MicFrequency.svelte";
 
   let audioContext: AudioContext;
   let oscillator: OscillatorNode;
@@ -67,20 +68,25 @@
       <Slider bind:value={frequency} max={440} step={1} />
     </div>
   </div>
-  <div class="flex justify-center">
-    <Button
-      variant="ghost"
-      class="flex flex-row gap-2"
-      on:click={() => (gainValue[0] = 0)}
-    >
-      {#if gainValue[0] > 0}
-        <Volume2 />
-      {:else}
-        <VolumeX />
-      {/if}
-    </Button>
-    <div class="flex flex-1 max-w-80">
-      <Slider bind:value={gainValue} min={0} max={1} step={0.01} />
+  <div class="flex flex-col justify-center">
+    {#if audioContext}
+      <MicFrequency {audioContext} />
+    {/if}
+    <div class="flex justify-center">
+      <Button
+        variant="ghost"
+        class="flex flex-row gap-2"
+        on:click={() => (gainValue[0] = 0)}
+      >
+        {#if gainValue[0] > 0}
+          <Volume2 />
+        {:else}
+          <VolumeX />
+        {/if}
+      </Button>
+      <div class="flex flex-1 max-w-80">
+        <Slider bind:value={gainValue} min={0} max={1} step={0.01} />
+      </div>
     </div>
   </div>
 </div>
